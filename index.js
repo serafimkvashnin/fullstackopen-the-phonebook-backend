@@ -1,7 +1,35 @@
 const express = require('express')
+const morgan = require('morgan')
+
 const app = express()
 
 app.use(express.json())
+
+// morgan.token('body', (request, response) => {
+//   const body = request.body
+//   return Object.keys(body).length > 0 
+//     ? JSON.stringify(body) 
+//     : ' '
+// })
+
+app.use(morgan((tokens, req, res) => {
+  const log = [
+    tokens.method(req, res),
+    tokens.url(req, res),
+    tokens.status(req, res),
+    tokens.res(req, res, 'content-length'), '-',
+    tokens['response-time'](req, res), 'ms',
+  ]
+
+  const body = req.body
+  if (Object.keys(body).length > 0) {
+    return log.concat(
+      JSON.stringify(body)
+    ).join(' ')
+  }
+
+  return log.join(' ')
+}))
 
 let persons = [
     { 
@@ -48,7 +76,9 @@ app.post('/api/persons', (request, response) => {
   }
 
   const id = Math.round(Math.random() * 99999999999).toString()
-  persons.push({ id, name, number })
+  const person = { id, name, number }
+  persons.push(person)
+  response.json(person)
 })
 
 app.get('/api/persons', (request, response) => {
